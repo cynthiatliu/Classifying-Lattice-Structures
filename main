@@ -1,0 +1,90 @@
+#Main - all lattice types problem
+
+import numpy as np
+import random as rd
+from sklearn.ensemble import RandomForestClassifier
+from randomCoords import *
+
+def main():
+    #Making the forest
+    rawTrCoords = genCoords()
+    trCoords = buildTr(rawTrCoords)
+    
+    X_tr = trCoords[:,0:9]
+    Y_tr = trCoords[:,-1]
+    clf = RandomForestClassifier(n_estimators=300)
+    clf = clf.fit(X_tr,Y_tr)
+    
+    rawTestCoords = genCoordsAndP()
+    testCoords = buildTest(rawTestCoords)
+    
+    X_test = testCoords[:]
+    Y_test = clf.predict(X_test)
+    print (Y_test)
+    print ("----------------------------------------")
+    
+    #Hardcode time!
+    for i in range(len(X_test)):
+        X_test[i] = map(int, X_test[i])
+    XtestArr = np.array(X_test)
+    
+    X_mod2, X_mod3 = XtestArr[:,3:6], XtestArr[:,6:]
+    maxNonPCombo2 = 4; maxRCombo = 9
+    for i in range(7): #For each lattice type in X_test        
+        comboCount2 = []; comboCount3 = []; counter = 0
+        
+        while (counter < 30):
+            index = i*30 + counter
+            
+            newCombo = True #Because writing it directly in the if statement doesn't work!
+            for co in comboCount2: 
+                if len(co) != 0 and \
+                   X_mod2[index][0] == co[0] and X_mod2[index][1] == co[1] and X_mod2[index][2] == co[2]:
+                    newCombo = False
+                
+            if newCombo:
+                comboCount2.append(X_mod2[index])
+                
+            newCombo3 = True
+            for co in comboCount3:
+                if len(co) != 0 and \
+                   X_mod3[index][0] == co[0] and X_mod3[index][1] == co[1] and X_mod3[index][2] == co[2]: 
+                    newCombo3 = False
+                
+            if newCombo3:
+                comboCount3.append(X_mod3[index])
+            
+            counter += 1
+       
+        #Hardcode for identification
+        print ("Run %d:"%(i+1))
+        print (len(comboCount2))
+        print (len(comboCount3))
+        
+        if (len(comboCount3) <= maxRCombo): print ("The unit crystal is rhombehedral")
+        elif (len(comboCount2) <= 2 and len(comboCount3) > maxRCombo): print ("The unit crystal is face-centered")
+        elif (2 < len(comboCount2) <= 4 and len(comboCount3) > maxRCombo): 
+            print ("The unit crystal is one of: I, A, B, or C")
+            isI = True; isA = True; isB = True; isC = True
+            for i in range(len(comboCount2)):
+                if comboCount2[i][0] == 0 and comboCount2[i][1] == 0 and comboCount2[i][2] == 1:
+                    isA = False; isB = False; isI = False
+                if comboCount2[i][0] == 1 and comboCount2[i][1] == 0 and comboCount2[i][2] == 0:
+                    isC = False; isB = False; isI = False
+                if comboCount2[i][0] == 0 and comboCount2[i][1] == 1 and comboCount2[i][2] == 0:
+                    isA = False; isC = False; isI = False
+                if comboCount2[i][0] == 1 and comboCount2[i][1] == 1 and comboCount2[i][2] == 0:
+                    isA = False; isB = False
+                if comboCount2[i][0] == 0 and comboCount2[i][1] == 1 and comboCount2[i][2] == 1:
+                    isC = False; isB = False
+                if comboCount2[i][0] == 1 and comboCount2[i][1] == 0 and comboCount2[i][2] == 1:
+                    isA = False; isC = False
+            
+            if isI: print ("Specifically, the unit crystal is body-centered")
+            elif isA: print ("Specifically, the unit crystal is A")
+            elif isB: print ("Specifically, the unit crystal is B")
+            elif isC: print ("Specifically, the unit crystal is C")
+                    
+        else: print ("The unit crystal is primitive")
+
+main()
